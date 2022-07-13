@@ -1,0 +1,13 @@
+{
+	"name": "adf_ls_databricks_ws",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "https://adb-7360403101682040.0.azuredatabricks.net",
+			"authentication": "MSI",
+			"workspaceResourceId": "/subscriptions/55b7d686-7fb1-4196-ba4f-bde07b1775ad/resourceGroups/rg-udp/providers/Microsoft.Databricks/workspaces/databricks-workspace-udp",
+			"existingClusterId": "0701-040439-w1on6mup"
+		}
+	}
+}

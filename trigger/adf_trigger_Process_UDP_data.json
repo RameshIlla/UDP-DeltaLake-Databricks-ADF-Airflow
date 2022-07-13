@@ -2,7 +2,16 @@
 	"name": "adf_trigger_Process_UDP_data",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
+		"runtimeState": "Started",
+		"pipeline": {
+			"pipelineReference": {
+				"referenceName": "pipeline_process_data",
+				"type": "PipelineReference"
+			},
+			"parameters": {
+				"p_process_window_end_date": "@trigger().outputs.windowEndTime"
+			}
+		},
 		"type": "TumblingWindowTrigger",
 		"typeProperties": {
 			"frequency": "Hour",

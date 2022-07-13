@@ -1,0 +1,27 @@
+{
+	"name": "dataset_raw_folder",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "adf_ls_storageaccount_UDP",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_dataset_window_end_time": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@formatDateTime(dataset().p_dataset_window_end_time,'yyyy-MM-dd')",
+					"type": "Expression"
+				},
+				"fileSystem": "raw"
+			}
+		},
+		"schema": {}
+	}
+}

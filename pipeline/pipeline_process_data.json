@@ -1,0 +1,58 @@
+{
+	"name": "pipeline_process_data",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute Ingestion Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipeline_ingest_data",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_window_end_date": {
+							"value": "@pipeline().parameters.p_process_window_end_date",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Execute Transformation Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute Ingestion Pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipeline_transform_data",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_transform_window_end_date": {
+							"value": "@pipeline().parameters.p_process_window_end_date",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_process_window_end_date": {
+				"type": "string"
+			}
+		},
+		"annotations": []
+	}
+}

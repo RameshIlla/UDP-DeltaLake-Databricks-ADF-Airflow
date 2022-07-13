@@ -1,10 +1,10 @@
 {
-	"name": "pipeline_ingest_f1_data",
+	"name": "pipeline_ingest_data",
 	"properties": {
 		"activities": [
 			{
-				"name": "Ingest Circuits File",
-				"type": "DatabricksNotebook",
+				"name": "Get Source Folder Details",
+				"type": "GetMetadata",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "7.00:00:00",
@@ -15,231 +15,287 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/1.ingest_circuits_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
-						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
+					"dataset": {
+						"referenceName": "dataset_raw_folder",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_dataset_window_end_time": {
+								"value": "@pipeline().parameters.p_window_end_date",
+								"type": "Expression"
+							}
 						}
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "JsonReadSettings"
 					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
 				}
 			},
 			{
-				"name": "Ingest Races File",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
+				"name": "If folder exists",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Get Source Folder Details",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/2.ingest_races_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+					"expression": {
+						"value": "@activity('Get Source Folder Details').output.exists",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Ingest Circuits File",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/1.ingest_circuits_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Constructors File",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/3.ingest_constructors_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Races File",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/2.ingest_races_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Drivers file",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/4.ingest_drivers_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Constructors File",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/3.ingest_constructors_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Results File",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/5.ingest_results_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Drivers file",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/4.ingest_drivers_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Pit Stops File",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/6.ingest_pit_stops_file",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Results File",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/5.ingest_results_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Lap Times Folder",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/7.ingest_lap_times_folder",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Pit Stops File",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/6.ingest_pit_stops_file",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
-						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Ingest Qualifyng Folder copy",
-				"type": "DatabricksNotebook",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebookPath": "/UDP/ingestion/8.ingest_qualifying_folder",
-					"baseParameters": {
-						"p_data_source": {
-							"value": "@variables('v_data_source')",
-							"type": "Expression"
+						{
+							"name": "Ingest Lap Times Folder",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/7.ingest_lap_times_folder",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						},
-						"p_file_date": {
-							"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
-							"type": "Expression"
+						{
+							"name": "Ingest Qualifyng Folder copy",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/UDP/ingestion/8.ingest_qualifying_folder",
+								"baseParameters": {
+									"p_data_source": {
+										"value": "@variables('v_data_source')",
+										"type": "Expression"
+									},
+									"p_file_date": {
+										"value": "@formatDateTime(pipeline().parameters.p_window_end_date,'yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "adf_ls_databricks_ws",
+								"type": "LinkedServiceReference"
+							}
 						}
-					}
-				},
-				"linkedServiceName": {
-					"referenceName": "adf_ls_databricks_ws",
-					"type": "LinkedServiceReference"
+					]
 				}
 			}
 		],

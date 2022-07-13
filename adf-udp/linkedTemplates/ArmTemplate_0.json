@@ -14,10 +14,6 @@
 		"adf_ls_storageaccount_UDP_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://storageaccountudp.dfs.core.windows.net/"
-		},
-		"adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date": {
-			"type": "string",
-			"defaultValue": "@trigger.outputs.windowEndTime"
 		}
 	},
 	"variables": {
@@ -123,6 +119,7 @@
 							],
 							"storeSettings": {
 								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
 								"enablePartitionDiscovery": false
 							},
 							"formatSettings": {
@@ -448,6 +445,7 @@
 							],
 							"storeSettings": {
 								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
 								"enablePartitionDiscovery": false
 							},
 							"formatSettings": {
@@ -683,40 +681,6 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/pipeline_ingest_data')]",
 				"[concat(variables('factoryId'), '/pipelines/pipeline_transform_data')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/adf_trigger_Process_UDP_data')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Stopped",
-				"pipeline": {
-					"pipelineReference": {
-						"referenceName": "pipeline_process_data",
-						"type": "PipelineReference"
-					},
-					"parameters": {
-						"p_process_window_end_date": "[parameters('adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date')]"
-					}
-				},
-				"type": "TumblingWindowTrigger",
-				"typeProperties": {
-					"frequency": "Minute",
-					"interval": 15,
-					"startTime": "2021-03-14T22:19:00Z",
-					"endTime": "2021-04-18T22:19:00Z",
-					"delay": "00:00:00",
-					"maxConcurrency": 1,
-					"retryPolicy": {
-						"intervalInSeconds": 30
-					},
-					"dependsOn": []
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/pipeline_process_data')]"
 			]
 		}
 	]

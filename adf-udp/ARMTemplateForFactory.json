@@ -14,10 +14,6 @@
 		"adf_ls_storageaccount_UDP_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://storageaccountudp.dfs.core.windows.net/"
-		},
-		"adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date": {
-			"type": "string",
-			"defaultValue": "@trigger.outputs.windowEndTime"
 		}
 	},
 	"variables": {
@@ -58,6 +54,7 @@
 							],
 							"storeSettings": {
 								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
 								"enablePartitionDiscovery": false
 							},
 							"formatSettings": {
@@ -350,68 +347,71 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/adf_ls_databricks_ws')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"name": "[concat(parameters('factoryName'), '/pipeline_process_data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"annotations": [],
-				"type": "AzureDatabricks",
-				"typeProperties": {
-					"domain": "https://adb-7360403101682040.0.azuredatabricks.net",
-					"authentication": "MSI",
-					"workspaceResourceId": "/subscriptions/55b7d686-7fb1-4196-ba4f-bde07b1775ad/resourceGroups/rg-udp/providers/Microsoft.Databricks/workspaces/databricks-workspace-udp",
-					"existingClusterId": "0701-040439-w1on6mup"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/adf_ls_storageaccount_UDP')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobFS",
-				"typeProperties": {
-					"url": "[parameters('adf_ls_storageaccount_UDP_properties_typeProperties_url')]",
-					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('adf_ls_storageaccount_UDP_accountKey')]"
+				"activities": [
+					{
+						"name": "Execute Ingestion Pipeline",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pipeline_ingest_data",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_window_end_date": {
+									"value": "@pipeline().parameters.p_process_window_end_date",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "Execute Transformation Pipeline",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute Ingestion Pipeline",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pipeline_transform_data",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_transform_window_end_date": {
+									"value": "@pipeline().parameters.p_process_window_end_date",
+									"type": "Expression"
+								}
+							}
+						}
 					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dataset_raw_folder')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "adf_ls_storageaccount_UDP",
-					"type": "LinkedServiceReference"
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
 				},
 				"parameters": {
-					"p_dataset_window_end_time": {
+					"p_process_window_end_date": {
 						"type": "string"
 					}
 				},
-				"annotations": [],
-				"type": "Json",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": {
-							"value": "@formatDateTime(dataset().p_dataset_window_end_time,'yyyy-MM-dd')",
-							"type": "Expression"
-						},
-						"fileSystem": "raw"
-					}
-				},
-				"schema": {}
+				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/adf_ls_storageaccount_UDP')]"
+				"[concat(variables('factoryId'), '/pipelines/pipeline_ingest_data')]",
+				"[concat(variables('factoryId'), '/pipelines/pipeline_transform_data')]"
 			]
 		},
 		{
@@ -448,6 +448,7 @@
 							],
 							"storeSettings": {
 								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
 								"enablePartitionDiscovery": false
 							},
 							"formatSettings": {
@@ -618,106 +619,69 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/pipeline_process_data')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
+			"name": "[concat(parameters('factoryName'), '/dataset_raw_folder')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"activities": [
-					{
-						"name": "Execute Ingestion Pipeline",
-						"type": "ExecutePipeline",
-						"dependsOn": [],
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "pipeline_ingest_data",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {
-								"p_window_end_date": {
-									"value": "@pipeline().parameters.p_process_window_end_date",
-									"type": "Expression"
-								}
-							}
-						}
-					},
-					{
-						"name": "Execute Transformation Pipeline",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "Execute Ingestion Pipeline",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "pipeline_transform_data",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {
-								"p_transform_window_end_date": {
-									"value": "@pipeline().parameters.p_process_window_end_date",
-									"type": "Expression"
-								}
-							}
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
+				"linkedServiceName": {
+					"referenceName": "adf_ls_storageaccount_UDP",
+					"type": "LinkedServiceReference"
 				},
 				"parameters": {
-					"p_process_window_end_date": {
+					"p_dataset_window_end_time": {
 						"type": "string"
 					}
 				},
-				"annotations": []
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@formatDateTime(dataset().p_dataset_window_end_time,'yyyy-MM-dd')",
+							"type": "Expression"
+						},
+						"fileSystem": "raw"
+					}
+				},
+				"schema": {}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/pipeline_ingest_data')]",
-				"[concat(variables('factoryId'), '/pipelines/pipeline_transform_data')]"
+				"[concat(variables('factoryId'), '/linkedServices/adf_ls_storageaccount_UDP')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/adf_trigger_Process_UDP_data')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
+			"name": "[concat(parameters('factoryName'), '/adf_ls_databricks_ws')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Stopped",
-				"pipeline": {
-					"pipelineReference": {
-						"referenceName": "pipeline_process_data",
-						"type": "PipelineReference"
-					},
-					"parameters": {
-						"p_process_window_end_date": "[parameters('adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date')]"
-					}
-				},
-				"type": "TumblingWindowTrigger",
+				"type": "AzureDatabricks",
 				"typeProperties": {
-					"frequency": "Minute",
-					"interval": 15,
-					"startTime": "2021-03-14T22:19:00Z",
-					"endTime": "2021-04-18T22:19:00Z",
-					"delay": "00:00:00",
-					"maxConcurrency": 1,
-					"retryPolicy": {
-						"intervalInSeconds": 30
-					},
-					"dependsOn": []
+					"domain": "https://adb-7360403101682040.0.azuredatabricks.net",
+					"authentication": "MSI",
+					"workspaceResourceId": "/subscriptions/55b7d686-7fb1-4196-ba4f-bde07b1775ad/resourceGroups/rg-udp/providers/Microsoft.Databricks/workspaces/databricks-workspace-udp",
+					"existingClusterId": "0701-040439-w1on6mup"
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/pipeline_process_data')]"
-			]
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/adf_ls_storageaccount_UDP')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('adf_ls_storageaccount_UDP_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('adf_ls_storageaccount_UDP_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
 		}
 	]
 }

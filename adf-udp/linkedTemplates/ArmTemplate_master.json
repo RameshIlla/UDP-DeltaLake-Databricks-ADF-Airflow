@@ -15,10 +15,6 @@
 			"type": "string",
 			"defaultValue": "https://storageaccountudp.dfs.core.windows.net/"
 		},
-		"adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date": {
-			"type": "string",
-			"defaultValue": "@trigger.outputs.windowEndTime"
-		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -51,9 +47,6 @@
 					},
 					"adf_ls_storageaccount_UDP_properties_typeProperties_url": {
 						"value": "[parameters('adf_ls_storageaccount_UDP_properties_typeProperties_url')]"
-					},
-					"adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date": {
-						"value": "[parameters('adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date')]"
 					}
 				}
 			},

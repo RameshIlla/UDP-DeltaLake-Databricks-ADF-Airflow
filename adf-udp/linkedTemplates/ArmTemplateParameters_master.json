@@ -11,9 +11,6 @@
 		"adf_ls_storageaccount_UDP_properties_typeProperties_url": {
 			"value": "https://storageaccountudp.dfs.core.windows.net/"
 		},
-		"adf_trigger_Process_UDP_data_properties_pipeline_parameters_p_process_window_end_date": {
-			"value": "@trigger.outputs.windowEndTime"
-		},
 		"containerUri": {
 			"value": ""
 		},
